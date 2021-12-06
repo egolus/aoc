@@ -1,17 +1,27 @@
 #!/bin/env python
-
-with open("../input07", "r") as infile:
-    lines = list(x.strip() for x in infile.readlines())
+from aocd import get_data, submit
 
 
-def solve07():
+def main():
+    lines = get_data(day=7, year=2021)
+    testlines = [""]
+    assert solve07(testlines) == 0
+    result = solve07(lines)
+    print("solve07:", result)
+    submit(result, part="a", day=7, year=2021)
+    assert solve07_2(testlines) == 0
+    result2 = solve07_2(lines)
+    print("solve07_2:", result2)
+    submit(result2, part="b", day=7, year=2021)
+
+
+def solve07(lines):
     ...
 
 
-def solve07_2():
+def solve07_2(lines):
     ...
 
 
 if __name__ == "__main__":
-    print("solve07:", solve07())
-    print("solve07_2:", solve07_2())
+    main()
