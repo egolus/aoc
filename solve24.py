@@ -1,17 +1,37 @@
 #!/bin/env python
-
-with open("../input24", "r") as infile:
-    lines = list(x.strip() for x in infile.readlines())
+from aocd import get_data, submit
 
 
-def solve24():
+def main():
+    values = [int(x) for x in get_data(day=24, year=2021).split(",")]
+    testvalues = [int(x) for x in "16,1,2,0,4,2,7,1,2,14".split(",")]
+    testtrue = 0
+    testtrue2 = 0
+
+    testresult = solve24(testvalues)
+    assert testresult == testtrue, f"{testresult} != {testtrue}"
+    result = solve24(values)
+    print("solve24:", result)
+
+    # input("submit?")
+    submit(result, part="a", day=24, year=2021)
+
+    testresult2 = solve24_2(testvalues)
+    assert testresult2 == testtrue2, f"{testresult2} != {testtrue2}"
+    result2 = solve24_2(values)
+    print("solve24_2:", result2)
+
+    # input("submit?")
+    submit(result2, part="b", day=24, year=2021)
+
+
+def solve24(values):
     ...
 
 
-def solve24_2():
+def solve24_2(values):
     ...
 
 
 if __name__ == "__main__":
-    print("solve24:", solve24())
-    print("solve24_2:", solve24_2())
+    main()
