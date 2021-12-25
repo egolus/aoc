@@ -3,10 +3,11 @@ from aocd import get_data, submit
 
 
 def main():
-    values = [int(x) for x in get_data(day=21, year=2021).split(",")]
-    testvalues = [int(x) for x in "16,1,2,0,4,2,7,1,2,14".split(",")]
-    testtrue = 0
-    testtrue2 = 0
+    values = get_data(day=21, year=2021)
+    testvalues = """Player 1 starting position: 4
+Player 2 starting position: 8"""
+    testtrue = 739785
+    testtrue2 = 444356092776315
 
     testresult = solve21(testvalues)
     assert testresult == testtrue, f"{testresult} != {testtrue}"
@@ -26,7 +27,20 @@ def main():
 
 
 def solve21(values):
-    ...
+    p1, p2 = [{"pos": int(line.split(": ")[1]), "count": 0} for line in values.splitlines()]
+    counter = -1
+    rolls = 0
+    while p1["count"] < 1000 and p2["count"] < 1000:
+        print(p1, p2, counter, rolls)
+        for p in (p1, p2):
+            rolls += 3
+            p["pos"] = ((p["pos"] + 3 * (counter + 3) -1) % 10) + 1
+            p["count"] += p["pos"]
+            if p["count"] >= 1000:
+                break
+            counter = (counter + 3) % 100
+    print(p1, p2, counter, rolls)
+    return (p1["count"] if p1["count"] < p2["count"] else p2["count"]) * rolls
 
 
 def solve21_2(values):
