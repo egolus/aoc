@@ -29,8 +29,6 @@ def main():
         ("#############\n"
         "#...........#\n"
         "###B#C#B#D###\n"
-        "  #D#C#B#A#\n"
-        "  #A#D#C#A#\n"
         "  #A#D#C#A#"
         "  #########", 1): 44169,
     }
@@ -206,8 +204,41 @@ podCost = {
 }
 
 
+def stateFromStr(string):
+    values = string.splitlines()
+    state = {}
+    for p, po in (
+        ((0, 0), values[1][1]),
+        ((1, 0), values[1][2]),
+        ((3, 0), values[1][4]),
+        ((5, 0), values[1][6]),
+        ((7, 0), values[1][8]),
+        ((9, 0), values[1][10]),
+        ((10, 0), values[1][11]),
+        ((2, 1), values[2][3]),
+        ((4, 1), values[2][5]),
+        ((6, 1), values[2][7]),
+        ((8, 1), values[2][9]),
+        ((2, 2), values[3][3]),
+        ((4, 2), values[3][5]),
+        ((6, 2), values[3][7]),
+        ((8, 2), values[3][9]),
+        ((2, 3), values[4][3]),
+        ((4, 3), values[4][5]),
+        ((6, 3), values[4][7]),
+        ((8, 3), values[4][9]),
+        ((2, 4), values[5][3]),
+        ((4, 4), values[5][5]),
+        ((6, 4), values[5][7]),
+        ((8, 4), values[5][9]),
+    ):
+        if po != ".":
+            state[p] = po
+    return tuple(sorted(state.items()))
+
+
 class Mover:
-    openSet: dict = None
+    openSet: list = None
     cameFrom: dict = None
     # cost of the cheapest path from start to here (currently known)
     gScore: dict = None
@@ -234,7 +265,7 @@ class Mover:
         goal = tuple(sorted(goal))
         self.start = start
         self.goal = goal
-        self.openSet = {start}
+        self.openSet = [start]
         self.cameFrom = {}
         self.gScore = {start: 0}
         self.fScore = {start: 0}
@@ -257,31 +288,31 @@ class Mover:
         count = 0
         while self.openSet:
             count += 1
-            self.print("==============\n", level=3)
+            self.print("==============\n", level=4)
             self.print("self.openSet:", level=2)
             self.print(len(self.openSet), level=2)
-            if self.debug >= 3:
+            if self.debug >= 4:
                 for k in sorted(self.openSet,
                                 key=lambda a: self.fScore.get(a, maxsize)):
                     v = self.gScore[k]
-                    self.print(level=3)
-                    self.printBurrow(k, level=3)
-                    self.print("cost:", v, level=3)
-                    self.print("fScore:", self.fScore[k], level=3)
-                input()
-            self.state = min(self.openSet,
-                             key=lambda a: self.fScore.get(a, maxsize))
+                    self.print(level=4)
+                    self.printBurrow(k, level=4)
+                    self.print("cost:", v, level=4)
+                    self.print("fScore:", self.fScore[k], level=4)
+                # input()
+            self.state = self.openSet.pop(0)
             self.stateDict = dict(self.state)
             if not count % 500 and self.debug:
                 self.printBurrow()
-                print("len(self.openSet):", len(self.openSet))
+                print("len(openSet):", len(self.openSet))
                 print("gScore:", self.gScore[self.state])
+                print("fScore:", self.fScore[self.state])
             if self.state == self.goal:
                 print("found a path")
                 self.cost = self.gScore[self.goal]
                 return self.reconstructPath()
-            self.openSet.remove(self.state)
-            for neighbor in self.getNeighbors():
+            neighbors = self.getNeighbors()
+            for neighbor in neighbors:
                 tentativeGScore = self.gScore[self.state] + \
                         self.d[self.state, neighbor]
                 if ((neighbor not in self.gScore) or
@@ -289,7 +320,197 @@ class Mover:
                     self.cameFrom[neighbor] = self.state
                     self.gScore[neighbor] = tentativeGScore
                     self.fScore[neighbor] = tentativeGScore + self.h(neighbor)
-                    self.openSet.add(neighbor)
+                    # for tst in (
+                        # """#############
+# #..........D#
+# ###B#C#B#.###
+  # #D#C#B#A#
+  # #D#B#A#C#
+  # #A#D#C#A#
+  # #########""",
+
+                        # """#############
+# #A.........D#
+# ###B#C#B#.###
+  # #D#C#B#.#
+  # #D#B#A#C#
+  # #A#D#C#A#
+  # #########""",
+
+                        # """#############
+# #A........BD#
+# ###B#C#.#.###
+  # #D#C#B#.#
+  # #D#B#A#C#
+  # #A#D#C#A#
+  # #########""",
+
+                        # """#############
+# #A......B.BD#
+# ###B#C#.#.###
+  # #D#C#.#.#
+  # #D#B#A#C#
+  # #A#D#C#A#
+  # #########""",
+
+                        # """#############
+# #AA.....B.BD#
+# ###B#C#.#.###
+  # #D#C#.#.#
+  # #D#B#.#C#
+  # #A#D#C#A#
+  # #########""",
+
+                        # """#############
+# #AA.....B.BD#
+# ###B#.#.#.###
+  # #D#C#.#.#
+  # #D#B#C#C#
+  # #A#D#C#A#
+  # #########""",
+
+                        # """#############
+# #AA.....B.BD#
+# ###B#.#.#.###
+  # #D#.#C#.#
+  # #D#B#C#C#
+  # #A#D#C#A#
+  # #########""",
+
+                        # """#############
+# #AA...B.B.BD#
+# ###B#.#.#.###
+  # #D#.#C#.#
+  # #D#.#C#C#
+  # #A#D#C#A#
+  # #########""",
+
+                        # """#############
+# #AA.D.B.B.BD#
+# ###B#.#.#.###
+  # #D#.#C#.#
+  # #D#.#C#C#
+  # #A#.#C#A#
+  # #########""",
+
+                        # """#############
+# #AA.D...B.BD#
+# ###B#.#.#.###
+  # #D#.#C#.#
+  # #D#.#C#C#
+  # #A#B#C#A#
+  # #########""",
+
+                        # """#############
+# #AA.D.....BD#
+# ###B#.#.#.###
+  # #D#.#C#.#
+  # #D#B#C#C#
+  # #A#B#C#A#
+  # #########""",
+
+                        # """#############
+# #AA.D......D#
+# ###B#.#.#.###
+  # #D#B#C#.#
+  # #D#B#C#C#
+  # #A#B#C#A#
+  # #########""",
+
+                        # """#############
+# #AA.D......D#
+# ###B#.#C#.###
+  # #D#B#C#.#
+  # #D#B#C#.#
+  # #A#B#C#A#
+  # #########""",
+
+                        # """#############
+# #AA.D.....AD#
+# ###B#.#C#.###
+  # #D#B#C#.#
+  # #D#B#C#.#
+  # #A#B#C#.#
+  # #########""",
+
+                        # """#############
+# #AA.......AD#
+# ###B#.#C#.###
+  # #D#B#C#.#
+  # #D#B#C#.#
+  # #A#B#C#D#
+  # #########""",
+
+                        # """#############
+# #AA.......AD#
+# ###.#B#C#.###
+  # #D#B#C#.#
+  # #D#B#C#.#
+  # #A#B#C#D#
+  # #########""",
+
+                        # """#############
+# #AA.......AD#
+# ###.#B#C#.###
+  # #.#B#C#.#
+  # #D#B#C#D#
+  # #A#B#C#D#
+  # #########""",
+
+                        # """#############
+# #AA.D.....AD#
+# ###.#B#C#.###
+  # #.#B#C#.#
+  # #.#B#C#D#
+  # #A#B#C#D#
+  # #########""",
+
+                        # """#############
+# #A..D.....AD#
+# ###.#B#C#.###
+  # #.#B#C#.#
+  # #A#B#C#D#
+  # #A#B#C#D#
+  # #########""",
+
+                        # """#############
+# #...D.....AD#
+# ###.#B#C#.###
+  # #A#B#C#.#
+  # #A#B#C#D#
+  # #A#B#C#D#
+  # #########""",
+
+                        # """#############
+# #.........AD#
+# ###.#B#C#.###
+  # #A#B#C#D#
+  # #A#B#C#D#
+  # #A#B#C#D#
+  # #########""",
+
+                        # """#############
+# #..........D#
+# ###A#B#C#.###
+  # #A#B#C#D#
+  # #A#B#C#D#
+  # #A#B#C#D#
+  # #########""",
+
+                        # """#############
+# #...........#
+# ###A#B#C#D###
+  # #A#B#C#D#
+  # #A#B#C#D#
+  # #A#B#C#D#
+  # #########""",
+                            # ):
+                        # if neighbor == stateFromStr(tst):
+                            # self.printBurrow(neighbor, level=1)
+                            # input()
+                    if neighbor not in self.openSet:
+                        insort_left(self.openSet, neighbor,
+                                    key=lambda a: self.fScore.get(a, maxsize))
         print("no path found")
 
     def getNeighbors(self):
@@ -309,13 +530,13 @@ class Mover:
                 positionsToMove.append((pos, pod))
         for position, pod in positionsToMove:
             for target in self.possibleTargets(position, pod):
-                self.print("found target:", target, level=3)
+                self.print("found target:", position, "->", target, level=3)
                 if self.debug >= 3:
                     print([(s, self.stateDict.get(s, None)) for s
                            in self.podPath.get((position, target), None)])
                 if any([self.stateDict.get(s, None) for s
-                        in self.podPath.get((position, target), None)]):
-                    self.print("blocked:", level=3)
+                        in self.podPath[(position, target)]]):
+                    self.print("blocked", level=3)
                     continue
                 else:
                     cost = self.podCost[pod] * len(self.podPath[(position, target)])
@@ -337,9 +558,10 @@ class Mover:
                 continue
             below = [p for p in self.targets[pod] if
                      p[1] > target[1] and self.stateDict.get(p, None) != pod]
-            self.print("pod:", pod, level=3)
-            self.print("below", below, [self.stateDict.get(p, None)
-                                        for p in below], level=3)
+            if self.debug >= 3:
+                self.print("pod:", pod, level=3)
+                self.print("below", below, [self.stateDict.get(p, None)
+                                            for p in below], level=3)
             if not below:
                 self.print("valid", level=3)
                 podTargets.append(target)
@@ -367,8 +589,9 @@ class Mover:
 
     def h(self, node):
         # estimate the cost to reach the goal from this node
-        return 500 * sum([self.podCost[val] * len(self.podPath[key, self.targets[val][0]])
-                    for key, val in node if key not in self.targets[val]])
+        return sum([self.podCost[val] *
+                          len(self.podPath[key, self.targets[val][0]])
+                          for key, val in node if key not in self.targets[val]])
 
     def reconstructPath(self, node=None):
         # get the path from the start to this node
@@ -591,8 +814,9 @@ def solve23_2(values, debug=None):
         ((6, 2), "B"),
         ((8, 2), "A"),
         ((2, 3), "D"),
-        ((4, 3), "C"),
+        ((4, 3), "B"),
         ((6, 3), "A"),
+        ((8, 3), "C"),
         ((2, 4), values[3][3]),
         ((4, 4), values[3][5]),
         ((6, 4), values[3][7]),
@@ -607,15 +831,23 @@ def solve23_2(values, debug=None):
         ((4, 2), "B"),
         ((6, 2), "C"),
         ((8, 2), "D"),
+        ((2, 3), "A"),
+        ((4, 3), "B"),
+        ((6, 3), "C"),
+        ((8, 3), "D"),
+        ((2, 4), "A"),
+        ((4, 4), "B"),
+        ((6, 4), "C"),
+        ((8, 4), "D"),
     )
     mover = Mover(start, goal, ex=True, debug=debug)
     path = mover.solve()
-    for s in path:
-        mover.printBurrow(s)
-    print("score:", mover.gScore[tuple(sorted(goal))])
-    print("score:", mover.cost)
-    return mover.cost
-
+    if path:
+        for s in path:
+            mover.printBurrow(s)
+        print("score:", mover.gScore[tuple(sorted(goal))])
+        print("score:", mover.cost)
+        return mover.cost
 
 
 if __name__ == "__main__":
